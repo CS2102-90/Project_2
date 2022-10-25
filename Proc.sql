@@ -1,5 +1,56 @@
 /* ----- TRIGGERS     ----- */
+/* Trigger #1 Enforce constraint Users === {Creators, Backers} */
+CREATE OR REPLACE FUNCTION not_backer()
+RETURNS TRIGGER AS $$
+DECLARE
+  count NUMERIC;
+BEGIN
+  SELECT COUNT(*) INTO count 
+  FROM  Backers
+  WHERE NEW.email = Backers.email /* Creators.email */
 
+  IF count > 0 THEN
+    RETURN NULL;
+  ELSE 
+    RETURN NEW;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER non_backer
+BEFORE INSERT OR UPDATE ON Creators
+FOR EACH ROW EXECUTE FUNCTION not_backer();
+
+/* Trigger #2  Enforce constraint that (backer's pledge amount) >= (reward level minium amount) */
+CREATE OR REPLACE FUNCTION check_reward_amount()
+RETURNS TRIGGER AS $$
+DECLARE
+  minimal NUMERIC;
+BEGIN
+  SELECT  min_amt INTO minimal
+  FROM    Rewards
+  WHERE   NEW.name = Rewards.name
+  AND NEW.id = Rewards.id  
+
+  IF NEW.amount > minimal THEN
+    RETURN NEW;
+  ELSE 
+    RETURN (NEW.email, NEW.name, NEW.id, NEW.backing, NEW.request, minimal);
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER check_reward_min
+BEFORE INSERT OR UPDATE ON Backs
+FOR EACH ROW EXECUTE FUNCTION check_reward_amount();
+
+/* Trigger #3  Enforce constraint Project === Has. Each project has at least one reward level */
+CREATE OR REPLACE
+RETURNS TRIGGER AS $$
+BEGIN 
+
+END;
+$$ LANGUAGE plpgsql;
 
 /* ------------------------ */
 
@@ -30,8 +81,17 @@ CREATE OR REPLACE PROCEDURE add_project(
   amounts NUMERIC[]
 ) AS $$
 -- add declaration here
+DECLARE
+  reward_size INTEGER;
+  amount_size INTEGER;
 BEGIN
   -- your code here
+  SET reward_size = CARDINALITY(names);
+  SET amount_size = CARDINALITY(amounts);
+  IF
+    INSERT INTO Projects VALUES 
+    (id, email, ptype, created, name, deadline, goal);
+  END IF;
 END;
 $$ LANGUAGE plpgsql;
 
