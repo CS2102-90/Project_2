@@ -68,6 +68,17 @@ CREATE OR REPLACE PROCEDURE add_user(
 -- add declaration here
 BEGIN
   -- your code here
+  INSERT INTO Users VALUES (email, name, cc1, cc2);
+  
+  IF kind = "BACKER" THEN
+    INSERT INTO Backers VALUES (email,  street, num, zip, country);
+  ELSE IF kind = "CREATOR" THEN
+    INSERT INTO Creators VALUES (email, country);
+  ELSE IF kind = "BOTH" THEN
+  BEGIN
+    INSERT INTO Backers VALUES (email,  street, num, zip, country);
+    INSERT INTO Creators VALUES (email, country);
+  END
 END;
 $$ LANGUAGE plpgsql;
 
@@ -82,16 +93,16 @@ CREATE OR REPLACE PROCEDURE add_project(
 ) AS $$
 -- add declaration here
 DECLARE
-  reward_size INTEGER;
-  amount_size INTEGER;
+  cur_idx INT;
 BEGIN
   -- your code here
-  SET reward_size = CARDINALITY(names);
-  SET amount_size = CARDINALITY(amounts);
-  IF
-    INSERT INTO Projects VALUES 
-    (id, email, ptype, created, name, deadline, goal);
-  END IF;
+  SET cur_idx := 0;
+  WHILE cur_idx < array_length(names, 1)
+  BEGIN
+    INSERT INTO Projects VALUES (id, email, ptype, created, deadline, goal);
+    INSERT INTO Rewards VALUES (id, names[cur_idx], amounts[cur_idx]);
+    SET cur_idx := cur_idx + 1;
+  END
 END;
 $$ LANGUAGE plpgsql;
 
