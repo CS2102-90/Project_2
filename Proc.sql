@@ -9,7 +9,7 @@ BEGIN
   FROM  Backers
   WHERE NEW.email = Backers.email /* Creators.email */
 
-  IF count > 0 THEN
+  IF (count > 0) THEN
     RETURN NULL;
   ELSE 
     RETURN NEW;
@@ -18,8 +18,29 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER non_backer
-BEFORE INSERT OR UPDATE ON Creators
+BEFORE INSERT ON Creators
 FOR EACH ROW EXECUTE FUNCTION not_backer();
+
+CREATE OR REPLACE FUNCTION not_creator()
+RETURNS TRIGGER AS $$
+DECLARE
+  count NUMERIC;
+BEGIN
+  SELECT COUNT(*) INTO count 
+  FROM  Creators
+  WHERE NEW.email = Creators.email /* Creators.email */
+
+  IF (count > 0) THEN
+    RETURN NULL;
+  ELSE 
+    RETURN NEW;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER non_creator
+BEFORE INSERT ON Backers
+FOR EACH ROW EXECUTE FUNCTION not_creator();
 
 /* Trigger #2  Enforce constraint that (backer's pledge amount) >= (reward level minium amount) */
 CREATE OR REPLACE FUNCTION check_reward_amount()
@@ -32,26 +53,126 @@ BEGIN
   WHERE   NEW.name = Rewards.name
   AND NEW.id = Rewards.id  
 
-  IF NEW.amount > minimal THEN
+  IF (NEW.amount >= minimal) THEN
     RETURN NEW;
   ELSE 
-    RETURN (NEW.email, NEW.name, NEW.id, NEW.backing, NEW.request, minimal);
+    RETURN NULL;
   END IF;
 END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER check_reward_min
-BEFORE INSERT OR UPDATE ON Backs
+BEFORE INSERT ON Backs
 FOR EACH ROW EXECUTE FUNCTION check_reward_amount();
 
 /* Trigger #3  Enforce constraint Project === Has. Each project has at least one reward level */
-CREATE OR REPLACE
+CREATE OR REPLACE FUNCTION check_project_no_reward()
 RETURNS TRIGGER AS $$
+DECLARE 
+  count INTEGER;
 BEGIN 
-
+  SELECT COUNT(*) INTO count 
+  FROM Rewards 
+  WHERE Rewards.id = NEW.id
+  IF (count > 0) THEN
+    RETURN NEW;
+  ELSE 
+    RETURN NULL;
+  END IF;
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE CONSTRAINT TRIGGER project_no_reward 
+BEFORE INSERT ON Projects
+DEFERRABLE INITIALLY IMMEDIATE
+FOR EACH ROW EXECUTE FUNCTION check_project_no_reward();
+
+/* Trigger #4 */
+CREATE OR REPLACE FUNCTION check_refund()
+RETURNS TRIGGER AS $$
+DECLARE 
+  check DATE;
+  ddl DATE;
+BEGIN 
+  SELECT request INTO check
+  FROM Backs 
+  WHERE NEW.email = Backs.email
+  AND NEW.pid = Backs.id
+
+  SELECT deadline INTO ddl 
+  FROM Projects
+  WHERE NEW.pid = Projects.id
+
+  IF (check IS NOT NULL) THEN
+  BEGIN 
+    ddl := DATEADD(DD, -90, ddl)
+    IF (ddl >= check) THEN
+      RETURN NEW;
+    ELSE 
+      RETURN (NEW.email, NEW.pid, NEW.eid, NEW.date, FALSE);
+    END IF;
+  END
+  ELSE 
+    RETURN NULL;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE Trigger check_valid_refund
+BEFORE INSERT ON Refunds
+FOR EACH ROW EXECUTE FUNCTION check_refund();
+
+/* Trigger #5 */
+CREATE OR REPLACE FUNCTION check_backs()
+RETURNS TRIGGER AS $$
+DECLARE 
+  ddl DATE;
+BEGIN 
+
+  SELECT deadline INTO ddl 
+  FROM Projects
+  WHERE NEW.pid = Projects.id
+
+  IF (ddl >= NEW.backing) THEN
+    RETURN NEW;
+  ELSE 
+    RETURN NULL;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE Trigger check_valid_refund
+BEFORE INSERT ON Backs
+FOR EACH ROW EXECUTE FUNCTION check_backs();
+
+/* Trigger #6 */
+CREATE OR REPLACE FUNCTION check_refund_request()
+RETURNS TRIGGER AS $$
+DECLARE 
+  ddl DATE;
+  goal NUMERIC;
+  total_plegde NUMERIC;
+BEGIN 
+  SELECT sum(amount) INTO total_plegde 
+  FROM Backs
+  WHERE NEW.email = Backs.email
+  AND NEW.pid = Backs.id 
+  
+  SELECT goal, deadline INTO goal, ddl
+  FROM Projects
+  WHERE Projects.id = NEW.pid 
+
+  IF (total_plegde >= goal) AND (NEW.date > ddl) THEN
+    RETURN NEW;
+  ELSE 
+    RETURN NULL;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE Trigger check_valid_refund
+BEFORE INSERT ON Refunds
+FOR EACH ROW EXECUTE FUNCTION check_refund_request();
 /* ------------------------ */
 
 
@@ -79,6 +200,7 @@ BEGIN
     INSERT INTO Backers VALUES (email,  street, num, zip, country);
     INSERT INTO Creators VALUES (email, country);
   END
+  END IF;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -95,14 +217,16 @@ CREATE OR REPLACE PROCEDURE add_project(
 DECLARE
   cur_idx INT;
 BEGIN
+  SET CONSTRAINTS project_no_reward DEFFERED;
   -- your code here
-  SET cur_idx := 0;
-  WHILE cur_idx < array_length(names, 1)
+  INSERT INTO Projects VALUES (id, email, ptype, created, deadline, goal);
+  cur_idx := 0;
+  WHILE (cur_idx < array_length(names, 1))
   BEGIN
-    INSERT INTO Projects VALUES (id, email, ptype, created, deadline, goal);
     INSERT INTO Rewards VALUES (id, names[cur_idx], amounts[cur_idx]);
-    SET cur_idx := cur_idx + 1;
+    cur_idx := cur_idx + 1;
   END
+  COMMIT;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -113,8 +237,21 @@ CREATE OR REPLACE PROCEDURE auto_reject(
   eid INT, today DATE
 ) AS $$
 -- add declaration here
+DECLARE 
+
 BEGIN
   -- your code here
+  SELECT refund_date 
+  FROM Refunds r, Employees e, Projects p 
+  WHERE date > deadline + 90 AND eid = eid
+  IF 
+  ELSE 
+  BEGIN
+    INSERT INTO Refunds VALUES  
+  END
+  END IF;
+
+  SET today := CAST(GETDATE())
 END;
 $$ LANGUAGE plpgsql;
 /* ------------------------ */
@@ -131,6 +268,10 @@ CREATE OR REPLACE FUNCTION find_superbackers(
 -- add declaration here
 BEGIN
   -- your code here
+  SELECT email, name 
+  FROM 
+  WHERE 
+  ORDER BY email ASC;
 END;
 $$ LANGUAGE plpgsql;
 
