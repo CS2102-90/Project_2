@@ -155,8 +155,7 @@ DECLARE
 BEGIN 
   SELECT sum(amount) INTO total_plegde 
   FROM Backs
-  WHERE NEW.email = Backs.email
-  AND NEW.pid = Backs.id 
+  WHERE NEW.pid = Backs.id 
   
   SELECT goal, deadline INTO goal, ddl
   FROM Projects
@@ -238,11 +237,23 @@ CREATE OR REPLACE PROCEDURE auto_reject(
 ) AS $$
 -- add declaration here
 DECLARE 
-  ddl DATE;
+  emails TEXT[]
+  pids INT[]
+  cur_ind = 0
 BEGIN
   -- your code here
-  SELECT deadline INTO ddl 
-  FROM Projects
+  SELECT b.email, b.id INTO emails, pids
+  FROM Backs b, Prokects p
+  WHERE b.request is not NULL
+  AND b.id = p.id
+  HAVING SELECT DATEADD(DD, -90, p.deadline) > b.request;
+
+  cur_ind := 0;
+  WHILE (cur_ind < array_length(emails, 1))
+  BEGIN
+    INSERT INTO Refunds VALUE (emails[cur_ind], pids[cur_ind], eid, today, FALSE)
+  END
+
 END;
 $$ LANGUAGE plpgsql;
 /* ------------------------ */
@@ -258,10 +269,43 @@ CREATE OR REPLACE FUNCTION find_superbackers(
 ) RETURNS TABLE(email TEXT, name TEXT) AS $$
 -- add declaration here
 BEGIN
-  -- your code here
+  -- your code here 
   SELECT email, name 
-  FROM 
-  WHERE 
+  FROM Backers, Users,
+  WHERE Backers.email = Users.email
+  AND Backers.email IN ((SELECT email
+                        FROM Backers NATURAL JOIN Backs, Projects
+                        WHERE Backers.email in (SELECT email FROM Verifies)
+                        AND Backs.id IN  (SELECT id
+                                            FROM Projects p, Backs b 
+                                            WHERE p.id = b.id 
+                                            AND deadline >= SELECT DATEADD(DD, -30, today)
+                                            GROUP BY p.id 
+                                            HAVING SUM(b.amount) >= p.goal )
+                        AND Backs.id = Projects.id 
+                        GROUP BY email
+                        HAVING COUNT(Projects.id) >= 5
+                        AND COUNT(DISTINCT Projects.ptype) >= 3)
+                        UNION
+                        (SELECT email
+                        FROM Backers NATURAL JOIN Backs
+                        WHERE Backers.email IN (SELECT email FROM Vertifies)
+                        AND NOT EXISTS (SELECT *
+                                        FROM Backs z
+                                        WHERE Backers.email = z.email
+                                        AND z.request IS NOT NULL)
+                        AND NOT EXISTS (SELECT * 
+                                        FROM Refunds
+                                        WHERE Backers.email = Refunds.email)
+
+                        AND Backs.id IN (SELECT id
+                                            FROM Projects p, Backs b 
+                                            WHERE p.id = b.id 
+                                            AND deadline >= SELECT DATEADD(DD, -30, today)
+                                            GROUP BY p.id 
+                                            HAVING SUM(b.amount) >= p.goal )
+                        GROUP BY email
+                        HAVING SUM(amount) >= 1500))
   ORDER BY email ASC;
 END;
 $$ LANGUAGE plpgsql;
