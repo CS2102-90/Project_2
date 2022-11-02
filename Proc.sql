@@ -171,7 +171,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE Trigger check_valid_refund
-BEFORE INSERT ON Refunds
+BEFORE INSERT OR UPDATE ON Refunds
 FOR EACH ROW EXECUTE FUNCTION check_refund_request();
 /* ------------------------ */
 
@@ -238,20 +238,11 @@ CREATE OR REPLACE PROCEDURE auto_reject(
 ) AS $$
 -- add declaration here
 DECLARE 
-
+  ddl DATE;
 BEGIN
   -- your code here
-  SELECT refund_date 
-  FROM Refunds r, Employees e, Projects p 
-  WHERE date > deadline + 90 AND eid = eid
-  IF 
-  ELSE 
-  BEGIN
-    INSERT INTO Refunds VALUES  
-  END
-  END IF;
-
-  SET today := CAST(GETDATE())
+  SELECT deadline INTO ddl 
+  FROM Projects
 END;
 $$ LANGUAGE plpgsql;
 /* ------------------------ */
