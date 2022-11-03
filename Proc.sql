@@ -279,7 +279,8 @@ BEGIN
                         AND Backs.id IN  (SELECT id
                                             FROM Projects p, Backs b 
                                             WHERE p.id = b.id 
-                                            AND deadline >= SELECT DATEADD(DD, -30, today)
+                                            AND deadline >= SELECT DATEADD(day, -30, today)
+                                            AND today > deadline
                                             GROUP BY p.id 
                                             HAVING SUM(b.amount) >= p.goal )
                         AND Backs.id = Projects.id 
@@ -301,7 +302,8 @@ BEGIN
                         AND Backs.id IN (SELECT id
                                             FROM Projects p, Backs b 
                                             WHERE p.id = b.id 
-                                            AND deadline >= SELECT DATEADD(DD, -30, today)
+                                            AND deadline >= SELECT DATEADD(day, -30, today)
+                                            AND today > deadline
                                             GROUP BY p.id 
                                             HAVING SUM(b.amount) >= p.goal )
                         GROUP BY email
@@ -317,7 +319,16 @@ CREATE OR REPLACE FUNCTION find_top_success(
   n INT, today DATE, ptype TEXT
 ) RETURNS TABLE(id INT, name TEXT, email TEXT,
                 amount NUMERIC) AS $$
-  SELECT 1, '', '', 0.0; -- replace this
+  BEGIN
+    SELECT p.id, p.email, (SUM(b.ammount) / p.goal) AS success_metric
+    FROM Projects p, Backs b
+    WHERE p.id = b.id 
+    AND today >= p.deadline
+    AND p.ptype = ptype
+    GROUP BY p.id 
+    ORDER BY success_metric DESC, deadline DESC, p.id
+    LIMIT n;
+  END;
 $$ LANGUAGE sql;
 
 
@@ -330,6 +341,18 @@ CREATE OR REPLACE FUNCTION find_top_popular(
 -- add declaration here
 BEGIN
   -- your code here
+  SELECT p.id, p.email, DATEDIFF(day, p.created, MIN(d.backing)) as day_nums
+  FROM Projects p, (SELECT id, backing, (SELECT SUM(amount)
+                                        FROM Backs b
+                                        WHERE b.id = id 
+                                        AND b.backing <= backing) AS date_money
+                    FROM Backs
+                    GROUP BY id, backing) AS d
+  WHERE p.id = d.id 
+  AND p.ptype = ptype
+  AND p.created >= today
+  AND d.date_money >= p.goal 
+  ORDER BY day_nums, p.id ASC;
 END;
 $$ LANGUAGE plpgsql;
 /* ------------------------ */
