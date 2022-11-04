@@ -39,7 +39,7 @@ BEGIN
   SELECT  min_amt INTO minimal
   FROM    Rewards
   WHERE   NEW.name = Rewards.name
-  AND NEW.id = Rewards.id  
+  AND NEW.id = Rewards.id ; 
 
   IF (NEW.amount >= minimal) THEN
     RETURN NEW;
@@ -61,7 +61,7 @@ DECLARE
 BEGIN 
   SELECT COUNT(*) INTO count 
   FROM Rewards 
-  WHERE Rewards.id = NEW.id
+  WHERE Rewards.id = NEW.id;
   IF (count > 0) THEN
     RETURN NEW;
   ELSE 
@@ -71,7 +71,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE CONSTRAINT TRIGGER project_no_reward 
-BEFORE INSERT ON Projects
+AFTER INSERT ON Projects
 DEFERRABLE INITIALLY IMMEDIATE
 FOR EACH ROW EXECUTE FUNCTION check_project_no_reward();
 
@@ -79,34 +79,34 @@ FOR EACH ROW EXECUTE FUNCTION check_project_no_reward();
 CREATE OR REPLACE FUNCTION check_refund()
 RETURNS TRIGGER AS $$
 DECLARE 
-  check DATE;
+  checkk DATE;
   ddl DATE;
 BEGIN 
-  SELECT request INTO check
+  SELECT request INTO checkk
   FROM Backs 
   WHERE NEW.email = Backs.email
-  AND NEW.pid = Backs.id
+  AND NEW.pid = Backs.id;
 
   SELECT deadline INTO ddl 
   FROM Projects
-  WHERE NEW.pid = Projects.id
+  WHERE NEW.pid = Projects.id;
 
-  IF (check IS NOT NULL) THEN
+  IF (checkk IS NOT NULL) THEN
   BEGIN 
-    ddl := DATEADD(DD, -90, ddl)
-    IF (ddl >= check) THEN
+    ddl := DATEADD(DD, -90, ddl);
+    IF (ddl >= checkk) THEN
       RETURN NEW;
     ELSE 
       RETURN (NEW.email, NEW.pid, NEW.eid, NEW.date, FALSE);
     END IF;
-  END
+  END;
   ELSE 
     RETURN NULL;
   END IF;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE Trigger check_valid_refund
+CREATE Trigger check_valid_refund1
 BEFORE INSERT ON Refunds
 FOR EACH ROW EXECUTE FUNCTION check_refund();
 
@@ -119,7 +119,7 @@ BEGIN
 
   SELECT deadline INTO ddl 
   FROM Projects
-  WHERE NEW.pid = Projects.id
+  WHERE NEW.pid = Projects.id;
 
   IF (ddl >= NEW.backing) THEN
     RETURN NEW;
@@ -129,7 +129,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE Trigger check_valid_refund
+CREATE Trigger check_back
 BEFORE INSERT ON Backs
 FOR EACH ROW EXECUTE FUNCTION check_backs();
 
@@ -143,11 +143,11 @@ DECLARE
 BEGIN 
   SELECT sum(amount) INTO total_plegde 
   FROM Backs
-  WHERE NEW.pid = Backs.id 
+  WHERE NEW.pid = Backs.id ;
   
   SELECT goal, deadline INTO goal, ddl
   FROM Projects
-  WHERE Projects.id = NEW.pid 
+  WHERE Projects.id = NEW.pid ;
 
   IF (total_plegde >= goal) AND (NEW.date > ddl) THEN
     RETURN NEW;
@@ -208,15 +208,15 @@ CREATE OR REPLACE PROCEDURE add_project(
 DECLARE
   cur_idx INT;
 BEGIN
-  SET CONSTRAINTS project_no_reward DEFFERED;
+  SET CONSTRAINTS project_no_reward DEFERRED;
   -- your code here
   INSERT INTO Projects VALUES (id, email, ptype, created, deadline, goal);
   cur_idx := 0;
   WHILE (cur_idx < array_length(names, 1))
-  BEGIN
+  LOOP
     INSERT INTO Rewards VALUES (id, names[cur_idx], amounts[cur_idx]);
     cur_idx := cur_idx + 1;
-  END
+  END LOOP;
   COMMIT;
 END;
 $$ LANGUAGE plpgsql;
@@ -229,23 +229,24 @@ CREATE OR REPLACE PROCEDURE auto_reject(
 ) AS $$
 -- add declaration here
 DECLARE 
-  emails TEXT[]
-  pids INT[]
-  cur_ind = 0
+  emails TEXT[];
+  pids INT[];
+  cur_ind INT;
 BEGIN
   -- your code here
+  cur_ind := 0;
   SELECT b.email, b.id INTO emails, pids
   FROM Backs b, Prokects p
   WHERE b.request is not NULL
   AND b.id = p.id
-  HAVING SELECT DATEADD(DD, -90, p.deadline) > b.request;
+  HAVING (SELECT DATEADD(DD, -90, p.deadline)) > b.request;
 
   cur_ind := 0;
   WHILE (cur_ind < array_length(emails, 1))
-  BEGIN
+  LOOP
     INSERT INTO Refunds VALUES (emails[cur_ind], pids[cur_ind], eid, today, FALSE);
     cur_ind := cur_ind + 1;
-  END
+  END LOOP;
 
 END;
 $$ LANGUAGE plpgsql;
@@ -264,7 +265,7 @@ CREATE OR REPLACE FUNCTION find_superbackers(
 BEGIN
   -- your code here 
   SELECT email, name 
-  FROM Backers, Users,
+  FROM Backers, Users
   WHERE Backers.email = Users.email
   AND Backers.email IN ((SELECT email
                         FROM Backers NATURAL JOIN Backs, Projects
@@ -272,7 +273,7 @@ BEGIN
                         AND Backs.id IN  (SELECT id
                                             FROM Projects p, Backs b 
                                             WHERE p.id = b.id 
-                                            AND deadline >= SELECT DATEADD(day, -30, today)
+                                            AND deadline >= (SELECT DATEADD(day, -30, today))
                                             AND today > deadline
                                             GROUP BY p.id 
                                             HAVING SUM(b.amount) >= p.goal )
@@ -295,7 +296,7 @@ BEGIN
                         AND Backs.id IN (SELECT id
                                             FROM Projects p, Backs b 
                                             WHERE p.id = b.id 
-                                            AND deadline >= SELECT DATEADD(day, -30, today)
+                                            AND deadline >= (SELECT DATEADD(day, -30, today))
                                             AND today > deadline
                                             GROUP BY p.id 
                                             HAVING SUM(b.amount) >= p.goal )
@@ -312,16 +313,14 @@ CREATE OR REPLACE FUNCTION find_top_success(
   n INT, today DATE, ptype TEXT
 ) RETURNS TABLE(id INT, name TEXT, email TEXT,
                 amount NUMERIC) AS $$
-  BEGIN
-    SELECT p.id, p.email, (SUM(b.ammount) / p.goal) AS success_metric
-    FROM Projects p, Backs b
-    WHERE p.id = b.id 
-    AND today >= p.deadline
-    AND p.ptype = ptype
-    GROUP BY p.id 
-    ORDER BY success_metric DESC, deadline DESC, p.id
-    LIMIT n;
-  END;
+	SELECT p.id, p.name, p.email, (SUM(b.amount) / p.goal) AS success_metric
+	FROM Projects p, Backs b
+	WHERE p.id = b.id 
+	AND today >= p.deadline
+	AND p.ptype = ptype
+	GROUP BY p.id, p.name 
+	ORDER BY success_metric DESC, deadline DESC, p.id
+	LIMIT n;
 $$ LANGUAGE sql;
 
 
@@ -345,7 +344,8 @@ BEGIN
   AND p.ptype = ptype
   AND p.created >= today
   AND d.date_money >= p.goal 
-  ORDER BY day_nums, p.id ASC;
+  ORDER BY day_nums, p.id ASC
+  LIMIT n;
 END;
 $$ LANGUAGE plpgsql;
 /* ------------------------ */
