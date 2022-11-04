@@ -3,44 +3,32 @@
 CREATE OR REPLACE FUNCTION not_backer()
 RETURNS TRIGGER AS $$
 DECLARE
-  count NUMERIC;
+  count1 NUMERIC;
+  count2 NUMERIC;
 BEGIN
-  SELECT COUNT(*) INTO count 
-  FROM  Backers
-  WHERE NEW.email = Backers.email /* Creators.email */
+  SELECT COUNT(*) INTO count1
+			  FROM  Backers
+			  WHERE NEW.email = Backers.email; /* Creators.email */
 
-  IF (count > 0) THEN
-    RETURN NULL;
-  ELSE 
+  SELECT COUNT(*) INTO count2
+			  FROM Creators
+			  WHERE NEW.email = Creators.email;
+  
+  IF (count1 > 0) OR (count2 > 0) THEN
     RETURN NEW;
+  ELSE 
+  	DELETE FROM  Users
+	WHERE email = NEW.email;
+    RETURN NULL;
   END IF;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER non_backer
-BEFORE INSERT ON Creators
+CREATE CONSTRAINT TRIGGER backer_or_creator
+AFTER INSERT ON Users
+DEFERRABLE INITIALLY IMMEDIATE
 FOR EACH ROW EXECUTE FUNCTION not_backer();
 
-CREATE OR REPLACE FUNCTION not_creator()
-RETURNS TRIGGER AS $$
-DECLARE
-  count NUMERIC;
-BEGIN
-  SELECT COUNT(*) INTO count 
-  FROM  Creators
-  WHERE NEW.email = Creators.email /* Creators.email */
-
-  IF (count > 0) THEN
-    RETURN NULL;
-  ELSE 
-    RETURN NEW;
-  END IF;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER non_creator
-BEFORE INSERT ON Backers
-FOR EACH ROW EXECUTE FUNCTION not_creator();
 
 /* Trigger #2  Enforce constraint that (backer's pledge amount) >= (reward level minium amount) */
 CREATE OR REPLACE FUNCTION check_reward_amount()
@@ -186,20 +174,24 @@ CREATE OR REPLACE PROCEDURE add_user(
   zip   TEXT, country TEXT, kind TEXT
 ) AS $$
 -- add declaration here
-BEGIN
   -- your code here
-  INSERT INTO Users VALUES (email, name, cc1, cc2);
-  
-  IF kind = "BACKER" THEN
-    INSERT INTO Backers VALUES (email,  street, num, zip, country);
-  ELSE IF kind = "CREATOR" THEN
-    INSERT INTO Creators VALUES (email, country);
-  ELSE IF kind = "BOTH" THEN
-  BEGIN
-    INSERT INTO Backers VALUES (email,  street, num, zip, country);
-    INSERT INTO Creators VALUES (email, country);
-  END
-  END IF;
+BEGIN
+	BEGIN
+	SET CONSTRAINTS backer_or_creator DEFERRED;
+	INSERT INTO Users VALUES (email, name, cc1, cc2);
+
+	IF (kind = 'BACKER') THEN
+		INSERT INTO Backers VALUES (email,  street, num, zip, country);
+	ELSIF (kind = 'CREATOR') THEN
+		INSERT INTO Creators VALUES (email, country);
+	ELSIF (kind = 'BOTH') THEN
+	BEGIN
+		INSERT INTO Backers VALUES (email,  street, num, zip, country);
+		INSERT INTO Creators VALUES (email, country);
+	END;
+	END IF;
+	COMMIT;
+	END;
 END;
 $$ LANGUAGE plpgsql;
 
