@@ -251,7 +251,8 @@ BEGIN
   cur_ind := 0;
   WHILE (cur_ind < array_length(emails, 1))
   BEGIN
-    INSERT INTO Refunds VALUE (emails[cur_ind], pids[cur_ind], eid, today, FALSE)
+    INSERT INTO Refunds VALUES (emails[cur_ind], pids[cur_ind], eid, today, FALSE);
+    cur_ind := cur_ind + 1;
   END
 
 END;
