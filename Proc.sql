@@ -57,14 +57,16 @@ FOR EACH ROW EXECUTE FUNCTION check_reward_amount();
 CREATE OR REPLACE FUNCTION check_project_no_reward()
 RETURNS TRIGGER AS $$
 DECLARE 
-  count INTEGER;
+  count1 INTEGER;
 BEGIN 
-  SELECT COUNT(*) INTO count 
+  SELECT COUNT(*) INTO count1
   FROM Rewards 
   WHERE Rewards.id = NEW.id;
-  IF (count > 0) THEN
+  IF (count1 > 0) THEN
     RETURN NEW;
   ELSE 
+  	DELETE FROM Projects
+	WHERE Projects.id = NEW.id;
     RETURN NULL;
   END IF;
 END;
