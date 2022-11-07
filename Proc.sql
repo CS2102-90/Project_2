@@ -116,14 +116,15 @@ FOR EACH ROW EXECUTE FUNCTION check_refund();
 CREATE OR REPLACE FUNCTION check_backs()
 RETURNS TRIGGER AS $$
 DECLARE 
+  crt DATE;
   ddl DATE;
 BEGIN 
 
-  SELECT deadline INTO ddl 
+  SELECT deadline, created INTO ddl, crt
   FROM Projects
   WHERE NEW.pid = Projects.id;
 
-  IF (ddl >= NEW.backing) THEN
+  IF (crt <= NEW.backing) AND (NEW.backing <= ddl) THEN
     RETURN NEW;
   ELSE 
     RETURN NULL;
