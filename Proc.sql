@@ -93,18 +93,19 @@ BEGIN
   FROM Projects
   WHERE NEW.pid = Projects.id;
 
-  IF (checkk IS NOT NULL) THEN
+  IF (checkk IS NULL) THEN
+    RETURN NULL;
+  END IF;
+  
   BEGIN 
-    ddl := DATEADD(DD, -90, ddl);
+    ddl := DATEADD(DD, 90, ddl);
+    -- nguoc dau??
     IF (ddl >= checkk) THEN
       RETURN NEW;
     ELSE 
       RETURN (NEW.email, NEW.pid, NEW.eid, NEW.date, FALSE);
     END IF;
   END;
-  ELSE 
-    RETURN NULL;
-  END IF;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -162,6 +163,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE Trigger check_valid_refund
 BEFORE INSERT OR UPDATE ON Refunds
+-- update to Backs instead of Refund
 FOR EACH ROW EXECUTE FUNCTION check_refund_request();
 /* ------------------------ */
 
@@ -179,22 +181,20 @@ CREATE OR REPLACE PROCEDURE add_user(
 -- add declaration here
   -- your code here
 BEGIN
-	BEGIN
-	SET CONSTRAINTS backer_or_creator DEFERRED;
-	INSERT INTO Users VALUES (email, name, cc1, cc2);
+SET CONSTRAINTS backer_or_creator DEFERRED;
+INSERT INTO Users VALUES (email, name, cc1, cc2);
 
-	IF (kind = 'BACKER') THEN
-		INSERT INTO Backers VALUES (email,  street, num, zip, country);
-	ELSIF (kind = 'CREATOR') THEN
-		INSERT INTO Creators VALUES (email, country);
-	ELSIF (kind = 'BOTH') THEN
-	BEGIN
-		INSERT INTO Backers VALUES (email,  street, num, zip, country);
-		INSERT INTO Creators VALUES (email, country);
-	END;
-	END IF;
-	COMMIT;
-	END;
+IF (kind = 'BACKER') THEN
+  INSERT INTO Backers VALUES (email,  street, num, zip, country);
+ELSIF (kind = 'CREATOR') THEN
+  INSERT INTO Creators VALUES (email, country);
+ELSIF (kind = 'BOTH') THEN
+BEGIN
+  INSERT INTO Backers VALUES (email,  street, num, zip, country);
+  INSERT INTO Creators VALUES (email, country);
+END;
+END IF;
+COMMIT;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -217,7 +217,7 @@ BEGIN
   cur_idx := 0;
   WHILE (cur_idx < array_length(names, 1))
   LOOP
-    INSERT INTO Rewards VALUES (id, names[cur_idx], amounts[cur_idx]);
+    INSERT INTO Rewards VALUES (names[cur_idx], id, amounts[cur_idx]);
     cur_idx := cur_idx + 1;
   END LOOP;
   COMMIT;
@@ -239,11 +239,10 @@ BEGIN
   -- your code here
   cur_ind := 0;
   SELECT b.email, b.id INTO emails, pids
-  FROM Backs b, Prokects p
+  FROM Backs b, Projects p
   WHERE b.request is not NULL
   AND b.id = p.id
-  HAVING (SELECT DATEADD(DD, -90, p.deadline)) > b.request;
-
+  AND DATEADD(DD, 90, p.deadline) < b.request;
   cur_ind := 0;
   WHILE (cur_ind < array_length(emails, 1))
   LOOP
@@ -336,7 +335,7 @@ CREATE OR REPLACE FUNCTION find_top_popular(
 -- add declaration here
 BEGIN
   -- your code here
-  SELECT p.id, p.email, DATEDIFF(day, p.created, MIN(d.backing)) as day_nums
+  SELECT p.id, p.name, p.email, DATEDIFF(day, p.created, MIN(d.backing)) as day_nums
   FROM Projects p, (SELECT id, backing, (SELECT SUM(amount)
                                         FROM Backs b
                                         WHERE b.id = id 
@@ -345,8 +344,9 @@ BEGIN
                     GROUP BY id, backing) AS d
   WHERE p.id = d.id 
   AND p.ptype = ptype
-  AND p.created >= today
+  AND p.created <= today
   AND d.date_money >= p.goal 
+  GROUP BY p.id
   ORDER BY day_nums, p.id ASC
   LIMIT n;
 END;
