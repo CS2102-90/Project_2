@@ -17,9 +17,7 @@ BEGIN
   IF (count1 > 0) OR (count2 > 0) THEN
     RETURN NEW;
   ELSE 
-  	DELETE FROM  Users
-	WHERE email = NEW.email;
-    RETURN NULL;
+  	RAISE EXCEPTION 'Neither Backer nor Creator';
   END IF;
 END;
 $$ LANGUAGE plpgsql;
@@ -65,9 +63,7 @@ BEGIN
   IF (count1 > 0) THEN
     RETURN NEW;
   ELSE 
-  	DELETE FROM Projects
-	WHERE Projects.id = NEW.id;
-    RETURN NULL;
+  	RAISE EXCEPTION 'Project has no reward';
   END IF;
 END;
 $$ LANGUAGE plpgsql;
