@@ -1,0 +1,1 @@
+CALL auto_reject(1, '2030-3-4');
