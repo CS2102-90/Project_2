@@ -219,7 +219,7 @@ BEGIN
   -- your code here
   INSERT INTO Projects VALUES (id, email, ptype, created, name, deadline, goal);
   cur_idx := 1;
-  WHILE (cur_idx < array_length(names, 1))
+  WHILE (cur_idx <= array_length(names, 1))
   LOOP
     INSERT INTO Rewards VALUES (names[cur_idx], id, amounts[cur_idx]);
     cur_idx := cur_idx + 1;
@@ -241,7 +241,6 @@ DECLARE
   cur_ind INT;
 BEGIN
   -- your code here
-  --cur_ind := 0;
   SELECT b.email, b.id INTO emails, pids
   FROM Backs b, Prokects p
   WHERE b.request is not NULL
