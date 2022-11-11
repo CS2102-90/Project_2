@@ -221,7 +221,7 @@ BEGIN
   cur_idx := 0;
   WHILE (cur_idx < array_length(names, 1))
   LOOP
-    INSERT INTO Rewards VALUES (id, names[cur_idx], amounts[cur_idx]);
+    INSERT INTO Rewards VALUES (names[cur_idx], id, amounts[cur_idx]);
     cur_idx := cur_idx + 1;
   END LOOP;
   --COMMIT;
