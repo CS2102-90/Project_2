@@ -1,0 +1,10 @@
+INSERT INTO Employees VALUES(0,'Hawak', 1000);
+INSERT INTO Employees VALUES(1,'Hawakd', 1000);
+INSERT INTO Employees VALUES(2,'Hawaasdfak', 1000);
+INSERT INTO Employees VALUES(3,'Hawadfsaak', 1000);
+INSERT INTO Employees VALUES(4,'Haadsfadwak', 1000);
+INSERT INTO Employees VALUES(5,'Hawaadf k', 1000);
+INSERT INTO Employees VALUES(6,'Hawadfaak', 1000);
+INSERT INTO Employees VALUES(7,'Haadwak', 1000);
+INSERT INTO Employees VALUES(8,'Haw123ak', 1000);
+INSERT INTO Employees VALUES(9,'Hawak154', 1000);

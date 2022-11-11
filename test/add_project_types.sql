@@ -1,0 +1,10 @@
+INSERT INTO ProjectTypes VALUES('Tech', 0);
+INSERT INTO ProjectTypes VALUES('Nuclear', 1);
+INSERT INTO ProjectTypes VALUES('Music', 2);
+INSERT INTO ProjectTypes VALUES('Game', 3);
+INSERT INTO ProjectTypes VALUES('Education', 4);
+INSERT INTO ProjectTypes VALUES('Oil', 5);
+INSERT INTO ProjectTypes VALUES('Cuisine', 6);
+INSERT INTO ProjectTypes VALUES('Youtube', 7);
+INSERT INTO ProjectTypes VALUES('Maps', 8);
+INSERT INTO ProjectTypes VALUES('Travel', 9);

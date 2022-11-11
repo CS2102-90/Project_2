@@ -44,7 +44,11 @@ BEGIN
   IF (NEW.amount >= minimal) THEN
     RETURN NEW;
   ELSE 
-    RETURN NULL;
+    BEGIN
+      RAISE NOTICE 'Backers must pledge an amount greater
+      than or equal to the minimum amount';
+      RETURN NULL;
+    END;
   END IF;
 END;
 $$ LANGUAGE plpgsql;
@@ -213,7 +217,7 @@ DECLARE
 BEGIN
   SET CONSTRAINTS project_no_reward DEFERRED;
   -- your code here
-  INSERT INTO Projects VALUES (id, email, ptype, created, deadline, goal);
+  INSERT INTO Projects VALUES (id, email, ptype, created, name, deadline, goal);
   cur_idx := 0;
   WHILE (cur_idx < array_length(names, 1))
   LOOP

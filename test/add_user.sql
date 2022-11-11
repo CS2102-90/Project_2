@@ -2,7 +2,7 @@ CALL add_user('e2222@u.nus.edu','Iron Man','DBS10232','DBS28391',
 			  'Manhatthan','237','1238123','United States','BACKER');
 CALL add_user('e23439@u.nus.edu','Spider Man','DBSdf10232','DBS28391',
 			  'Johor','2307','145238123','Singapore','BOTH');
-CALL add_user('e222122@u.nus.edu','Captain America','DBSas10232','DBS283df91',
+CALL add_user('e2221223@u.nus.edu','Captain America','DBSas10232','DBS283df91',
 			  'Ulu Padan','27','12123','China','CREATOR');
 CALL add_user('e22242@u.nus.edu','One Punch Man','DBS10232','DBS28391',
 			  'Kent Ridge','28/4','1238as123','Russia','BACKER');
@@ -11,7 +11,7 @@ CALL add_user('e222762@u.nus.edu','Superman','DBS102320','DBS28391',
 CALL add_user('e222202@u.nus.edu','Batman','DBS1023122','DBS283191',
 			  'Moon','2a37','1d2381g23','Japan','BOTH');
 
-CALL add_user('e221222@u.nus.edu','Captain Marvel','DBS1210232','',
+CALL add_user('e2212262@u.nus.edu','Captain Marvel','DBS1210232','',
 			  'Dover','237','1238123','United States','BACKER');
 CALL add_user('e234539@u.nus.edu','Ronaldo','DBSdf10232','DBS28391',
 			  'Clementi','2307','14532238123','Singapore','BOTH');
@@ -28,7 +28,7 @@ CALL add_user('e222542@u.nus.edu','Haweye','DBS102ad32','DBS28391',
 			  'Beijing','237','1238ga123','United States','BACKER');
 CALL add_user('e2362439@u.nus.edu','Elizabeth','DBSdfads10232','',
 			  'Fuzhou','2307','14523adf8123','Singapore','BOTH');
-CALL add_user('e21222122@u.nus.edu','Huston','DBSas10232','',
+CALL add_user('e212221422@u.nus.edu','Huston','DBSas10232','',
 			  'Funan','27','12123','China','CREATOR');
 CALL add_user('e22123242@u.nus.edu','John Cena','DBS1g0232','DBS28391',
 			  'Neustraße','218/4','123aas8123','Russia','BACKER');
