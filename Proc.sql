@@ -1,6 +1,6 @@
 /* ----- TRIGGERS     ----- */
 /* Trigger #1 Enforce constraint Users === {Creators, Backers} */
-CREATE OR REPLACE FUNCTION not_backer()
+CREATE OR REPLACE FUNCTION user_must_be_backer_or_creator()
 RETURNS TRIGGER AS $$
 DECLARE
   count1 NUMERIC;
@@ -27,7 +27,7 @@ $$ LANGUAGE plpgsql;
 CREATE CONSTRAINT TRIGGER backer_or_creator
 AFTER INSERT ON Users
 DEFERRABLE INITIALLY IMMEDIATE
-FOR EACH ROW EXECUTE FUNCTION not_backer();
+FOR EACH ROW EXECUTE FUNCTION user_must_be_backer_or_creator();
 
 
 /* Trigger #2  Enforce constraint that (backer's pledge amount) >= (reward level minium amount) */
