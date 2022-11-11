@@ -218,7 +218,7 @@ BEGIN
   SET CONSTRAINTS project_no_reward DEFERRED;
   -- your code here
   INSERT INTO Projects VALUES (id, email, ptype, created, name, deadline, goal);
-  cur_idx := 0;
+  cur_idx := 1;
   WHILE (cur_idx < array_length(names, 1))
   LOOP
     INSERT INTO Rewards VALUES (names[cur_idx], id, amounts[cur_idx]);
@@ -241,15 +241,15 @@ DECLARE
   cur_ind INT;
 BEGIN
   -- your code here
-  cur_ind := 0;
+  --cur_ind := 0;
   SELECT b.email, b.id INTO emails, pids
   FROM Backs b, Prokects p
   WHERE b.request is not NULL
   AND b.id = p.id
   HAVING (SELECT DATEADD(DD, -90, p.deadline)) > b.request;
 
-  cur_ind := 0;
-  WHILE (cur_ind < array_length(emails, 1))
+  cur_ind := 1;
+  WHILE (cur_ind <= array_length(emails, 1))
   LOOP
     INSERT INTO Refunds VALUES (emails[cur_ind], pids[cur_ind], eid, today, FALSE);
     cur_ind := cur_ind + 1;
