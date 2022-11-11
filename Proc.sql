@@ -193,7 +193,7 @@ BEGIN
 		INSERT INTO Creators VALUES (email, country);
 	END;
 	END IF;
-	COMMIT;
+	--COMMIT;
 	END;
 END;
 $$ LANGUAGE plpgsql;
@@ -220,7 +220,7 @@ BEGIN
     INSERT INTO Rewards VALUES (id, names[cur_idx], amounts[cur_idx]);
     cur_idx := cur_idx + 1;
   END LOOP;
-  COMMIT;
+  --COMMIT;
 END;
 $$ LANGUAGE plpgsql;
 
