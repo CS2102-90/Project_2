@@ -1,7 +1,7 @@
 CALL add_project(0, 'e2221223@u.nus.edu','Tech',
 				 '2022-11-10', 'Smurf', '2023-11-10', 
 				 10000, ARRAY['bronze','silver','gold'],ARRAY[1000,2000,3000]);
-CALL add_project(1, 'e222202@u.nus.edu','Nuclear',
+CALL add_project(1, 'e222202@u.nus.edu','Travel',
 				 '2022-11-10', 'Batman Car', '2024-11-10', 
 				 10000, ARRAY['bronze','silver','gold'],ARRAY[2000,4000,6000]);
 CALL add_project(2, 'e222762@u.nus.edu','Music',
@@ -10,7 +10,7 @@ CALL add_project(2, 'e222762@u.nus.edu','Music',
 CALL add_project(3, 'e22243762@u.nus.edu','Game',
 				 '2022-11-10', 'League of Legends', '2026-11-10', 
 				 10000, ARRAY['bronze','silver','gold'],ARRAY[2000,4000,6000]);
-CALL add_project(4, 'e2345139@u.nus.edu','Education',
+CALL add_project(4, 'e2345139@u.nus.edu','Travel',
 				 '2022-11-10', 'Tsinghua daxue', '2027-11-10', 
 				 10000, ARRAY['bronze','silver','gold','platinum'],ARRAY[2000,5000,7000,10000]);
 CALL add_project(5, 'e2343129@u.nus.edu','Oil',
@@ -26,8 +26,24 @@ CALL add_project(8, 'e22243762@u.nus.edu','Maps',
 				 '2022-11-10', 'Google map', '2033-11-10', 
 				 10000, ARRAY['bronze','silver','gold'],ARRAY[400,2000,3000]);
 CALL add_project(9, 'e2362439@u.nus.edu','Travel',
-				 '2022-11-10', 'Stay at home', '2045-11-10', 
-				 10000, ARRAY['bronze','silver','gold'],ARRAY[100,200,300]);                                                                                                      
+				 '2022-11-30', 'Stay at school', '2045-11-10', 
+				 10000, ARRAY['bronze','silver','gold'],ARRAY[100,200,300]);  
+
+CALL add_project(10, 'e2362439@u.nus.edu','Travel',
+				 '2022-12-10', 'Stay at home', '2045-11-10', 
+				 10000, ARRAY['bronze','silver','gold'],ARRAY[100,200,300]);  
+
+CALL add_project(11, 'e22243762@u.nus.edu','Travel',
+				 '2022-10-10', 'Stay at dorm', '2045-11-10', 
+				 10000, ARRAY['bronze','silver','gold'],ARRAY[100,200,300]); 
+
+CALL add_project(12, 'e2221223@u.nus.edu','Travel',
+				 '2022-11-17', 'Stay at NNN', '2045-11-10', 
+				 10000, ARRAY['bronze','silver','gold'],ARRAY[100,200,300]);  
+
+CALL add_project(13, 'e2362439@u.nus.edu','Travel',
+				 '2022-12-8', 'Stay at sr', '2045-11-10', 
+				 10000, ARRAY['bronze','silver','gold'],ARRAY[100,200,300]);                                                                                  
 -- CALL add_project();
 -- CALL add_project();
 -- CALL add_project();

@@ -22,6 +22,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS backer_or_creator ON Users;
+
 CREATE CONSTRAINT TRIGGER backer_or_creator
 AFTER INSERT ON Users
 DEFERRABLE INITIALLY IMMEDIATE
@@ -51,7 +53,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER check_reward_min
+CREATE OR REPLACE TRIGGER check_reward_min
 BEFORE INSERT ON Backs
 FOR EACH ROW EXECUTE FUNCTION check_reward_amount();
 
@@ -71,6 +73,8 @@ BEGIN
   END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS project_no_reward ON Projects;
 
 CREATE CONSTRAINT TRIGGER project_no_reward 
 AFTER INSERT ON Projects
@@ -97,8 +101,8 @@ BEGIN
      RETURN NULL;
   END IF;
 
-  BEGIN 
-    ddl := DATEADD(DD, -90, ddl);
+  BEGIN
+    ddl := (ddl + interval '90 day');
     IF (ddl >= checkk) THEN
       RETURN NEW;
     ELSE 
@@ -109,7 +113,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE Trigger check_valid_refund1
+CREATE OR REPLACE Trigger check_valid_refund1
 BEFORE INSERT ON Refunds
 FOR EACH ROW EXECUTE FUNCTION check_refund();
 
@@ -123,7 +127,6 @@ BEGIN
 
   SELECT deadline, created INTO ddl, crt
   FROM Projects
-  -- Thong: NEW.pid -> NEW.id
   WHERE NEW.id = Projects.id;
 
   IF (crt <= NEW.backing) AND (NEW.backing <= ddl) THEN
@@ -134,7 +137,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE Trigger check_back
+CREATE OR REPLACE Trigger check_back
 BEFORE INSERT ON Backs
 FOR EACH ROW EXECUTE FUNCTION check_backs();
 
@@ -148,13 +151,13 @@ DECLARE
 BEGIN 
   SELECT sum(amount) INTO total_plegde 
   FROM Backs
-  WHERE NEW.pid = Backs.id ;
+  WHERE NEW.id = Backs.id ;
   
-  SELECT goal, deadline INTO goal, ddl
-  FROM Projects
-  WHERE Projects.id = NEW.pid ;
+  SELECT p.goal, p.deadline INTO goal, ddl
+  FROM Projects p
+  WHERE p.id = NEW.id ;
 
-  IF (total_plegde >= goal) AND (NEW.date > ddl) THEN
+  IF (total_plegde >= goal) AND (NEW.request > ddl) THEN
     RETURN NEW;
   ELSE 
     RETURN NULL;
@@ -162,8 +165,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE Trigger check_valid_refund
-BEFORE INSERT OR UPDATE ON Refunds
+CREATE OR REPLACE Trigger check_valid_refund
+BEFORE UPDATE ON Backs
 FOR EACH ROW EXECUTE FUNCTION check_refund_request();
 /* ------------------------ */
 
@@ -196,7 +199,6 @@ BEGIN
 	END IF;
   -- Thong: Comment commit out
 	--COMMIT;
-	END;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -236,23 +238,20 @@ CREATE OR REPLACE PROCEDURE auto_reject(
 ) AS $$
 -- add declaration here
 DECLARE 
-  emails TEXT[];
-  pids INT[];
+  email TEXT;
+  pid INT;
   cur_ind INT;
 BEGIN
   -- your code here
-  SELECT b.email, b.id INTO emails, pids
-  -- Sai rui, ko dc, mai sua
-  FROM Backs b, Projects p
-  WHERE b.request is not NULL
-  AND b.id = p.id
-  HAVING (SELECT (p.deadline + interval '90 day')) > b.request;
+  FOR email, pid IN
+    SELECT b.email, b.id 
+    FROM Backs b, Projects p
+    WHERE b.request is not NULL
+    AND b.id = p.id
+    AND p.deadline + interval '90 day' > b.request
 
-  cur_ind := 1;
-  WHILE (cur_ind <= array_length(emails, 1))
   LOOP
-    INSERT INTO Refunds VALUES (emails[cur_ind], pids[cur_ind], eid, today, FALSE);
-    cur_ind := cur_ind + 1;
+    INSERT INTO Refunds VALUES (email, pid, eid, today, FALSE);
   END LOOP;
 
 END;
@@ -313,45 +312,59 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
-
 /* Function #2  */
 CREATE OR REPLACE FUNCTION find_top_success(
-  n INT, today DATE, ptype TEXT
+  n INT, today DATE, ptypee TEXT
 ) RETURNS TABLE(id INT, name TEXT, email TEXT,
                 amount NUMERIC) AS $$
-	SELECT p.id, p.name, p.email, (SUM(b.amount) / p.goal) AS success_metric
+	SELECT p.id, p.name, p.email, SUM(b.amount) AS amount
 	FROM Projects p, Backs b
 	WHERE p.id = b.id 
 	AND today >= p.deadline
-	AND p.ptype = ptype
+	AND p.ptype = ptypee
 	GROUP BY p.id, p.name 
-	ORDER BY success_metric DESC, deadline DESC, p.id
+	ORDER BY (SUM(b.amount) / p.goal) DESC, deadline DESC, p.id
 	LIMIT n;
 $$ LANGUAGE sql;
 
+CREATE OR REPLACE FUNCTION closest_date_goal(
+  p_id INT, created DATE, goal NUMERIC, today DATE
+) RETURNS INT AS $$
+DECLARE
+  backing_date DATE;
+  amount  NUMERIC;
+  pledged_amount NUMERIC;
+BEGIN
+  pledged_amount := 0;
+  FOR backing_date, amount IN
+    SELECT b.backing, b.amount
+    FROM Backs b
+    WHERE b.backing <= today AND b.id = p_id
+    ORDER BY b.backing ASC
+  LOOP
+    pledged_amount := pledged_amount + amount;
+    IF pledged_amount >= goal THEN
+      RETURN backing_date - created;
+    END IF;
+  END LOOP;
+  RETURN NULL;
+END; $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS find_top_popular;
 
 /* Function #3  */
 CREATE OR REPLACE FUNCTION find_top_popular(
-  n INT, today DATE, ptype TEXT
-) RETURNS TABLE(id INT, name TEXT, email TEXT,
-                days INT) AS $$
--- add declaration here
+  n INT, today DATE, p_typee TEXT
+) RETURNS TABLE(id INT, name TEXT, email TEXT, days INT) AS $$
 BEGIN
-  -- your code here
-  SELECT p.id, p.email, DATEDIFF(day, p.created, MIN(d.backing)) as day_nums
-  FROM Projects p, (SELECT id, backing, (SELECT SUM(amount)
-                                        FROM Backs b
-                                        WHERE b.id = id 
-                                        AND b.backing <= backing) AS date_money
-                    FROM Backs
-                    GROUP BY id, backing) AS d
-  WHERE p.id = d.id 
-  AND p.ptype = ptype
-  AND p.created >= today
-  AND d.date_money >= p.goal 
-  ORDER BY day_nums, p.id ASC
+  RETURN QUERY
+  SELECT
+    p.id, p.name, p.email, c.days
+  FROM
+    Projects p,
+    LATERAL (SELECT closest_date_goal(p.id, p.created, p.goal, today)) c(days)
+  WHERE p.ptype = p_typee AND c.days IS NOT NULL AND p.created < today
+  ORDER BY c.days ASC, p.id ASC
   LIMIT n;
 END;
 $$ LANGUAGE plpgsql;
