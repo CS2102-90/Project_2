@@ -270,27 +270,28 @@ CREATE OR REPLACE FUNCTION find_superbackers(
 -- add declaration here
 BEGIN
   -- your code here 
-  SELECT email, name 
-  FROM Backers, Users
+  RETURN QUERY
+  SELECT Backers.email, Users.name 
+  FROM Backers , Users
   WHERE Backers.email = Users.email
-  AND Backers.email IN ((SELECT email
-                        FROM Backers NATURAL JOIN Backs, Projects
-                        WHERE Backers.email in (SELECT email FROM Verifies)
-                        AND Backs.id IN  (SELECT id
+  AND Backers.email IN ((SELECT bb.email
+                        FROM Backers NATURAL JOIN Backs AS bb, Projects
+                        WHERE bb.email in (SELECT Verifies.email FROM Verifies)
+                        AND bb.id IN  (SELECT p.id
                                             FROM Projects p, Backs b 
                                             WHERE p.id = b.id 
-                                            AND deadline >= (SELECT DATEADD(day, -30, today))
+                                            AND deadline >= (SELECT (today - interval '30 day'))
                                             AND today > deadline
                                             GROUP BY p.id 
                                             HAVING SUM(b.amount) >= p.goal )
-                        AND Backs.id = Projects.id 
-                        GROUP BY email
+                        AND bb.id = Projects.id 
+                        GROUP BY bb.email
                         HAVING COUNT(Projects.id) >= 5
                         AND COUNT(DISTINCT Projects.ptype) >= 3)
                         UNION
-                        (SELECT email
-                        FROM Backers NATURAL JOIN Backs
-                        WHERE Backers.email IN (SELECT email FROM Vertifies)
+                        (SELECT bb.email
+                        FROM Backers NATURAL JOIN Backs AS bb
+                        WHERE bb.email IN (SELECT Verifies.email FROM Verifies)
                         AND NOT EXISTS (SELECT *
                                         FROM Backs z
                                         WHERE Backers.email = z.email
@@ -299,14 +300,14 @@ BEGIN
                                         FROM Refunds
                                         WHERE Backers.email = Refunds.email)
 
-                        AND Backs.id IN (SELECT id
+                        AND bb.id IN (SELECT p.id
                                             FROM Projects p, Backs b 
                                             WHERE p.id = b.id 
-                                            AND deadline >= (SELECT DATEADD(day, -30, today))
+                                            AND deadline >= (SELECT (today - interval '30 day'))
                                             AND today > deadline
                                             GROUP BY p.id 
                                             HAVING SUM(b.amount) >= p.goal )
-                        GROUP BY email
+                        GROUP BY bb.email
                         HAVING SUM(amount) >= 1500))
   ORDER BY email ASC;
 END;
