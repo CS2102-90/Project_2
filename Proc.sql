@@ -126,7 +126,8 @@ BEGIN
 
   SELECT deadline, created INTO ddl, crt
   FROM Projects
-  WHERE NEW.pid = Projects.id;
+  -- Thong: NEW.pid -> NEW.id
+  WHERE NEW.id = Projects.id;
 
   IF (crt <= NEW.backing) AND (NEW.backing <= ddl) THEN
     RETURN NEW;
@@ -197,6 +198,7 @@ BEGIN
 		INSERT INTO Creators VALUES (email, country);
 	END;
 	END IF;
+  -- Thong: Comment commit out
 	--COMMIT;
 	END;
 END;
@@ -218,12 +220,14 @@ BEGIN
   SET CONSTRAINTS project_no_reward DEFERRED;
   -- your code here
   INSERT INTO Projects VALUES (id, email, ptype, created, name, deadline, goal);
+  -- Thong cur_idx from 0 to 1
   cur_idx := 1;
   WHILE (cur_idx <= array_length(names, 1))
   LOOP
     INSERT INTO Rewards VALUES (names[cur_idx], id, amounts[cur_idx]);
     cur_idx := cur_idx + 1;
   END LOOP;
+  -- Thong: comment commit out
   --COMMIT;
 END;
 $$ LANGUAGE plpgsql;
@@ -246,7 +250,7 @@ BEGIN
   WHERE b.request is not NULL
   AND b.id = p.id
   HAVING (SELECT DATEADD(DD, -90, p.deadline)) > b.request;
-
+  -- Thong cur_idx from 0 to 1
   cur_ind := 1;
   WHILE (cur_ind <= array_length(emails, 1))
   LOOP

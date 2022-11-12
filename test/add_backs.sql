@@ -13,8 +13,28 @@ INSERT INTO Backs VALUES('e2222@u.nus.edu','bronze',5,
 
 INSERT INTO Backs VALUES('e222542@u.nus.edu','silver',0,
 						'2023-3-4','2023-3-6',2300);
+INSERT INTO Backs VALUES('e222542@u.nus.edu','silver',1,
+						'2023-3-4','2023-3-6',2300);
+INSERT INTO Backs VALUES('e222542@u.nus.edu','silver',2,
+						'2023-3-4','2023-3-6',2300);
+INSERT INTO Backs VALUES('e222542@u.nus.edu','silver',3,
+						'2023-3-4','2023-3-6',2300);
+INSERT INTO Backs VALUES('e222542@u.nus.edu','silver',4,
+						'2023-3-4','2023-3-6',2300);
+
 INSERT INTO Backs VALUES('e22123242@u.nus.edu','gold',0,
 						'2023-3-4','2023-3-7',3600);
+INSERT INTO Backs VALUES('e22123242@u.nus.edu','gold',1,
+						'2023-3-4','2023-3-7',3600);
+INSERT INTO Backs VALUES('e22123242@u.nus.edu','gold',2,
+						'2023-3-4','2023-3-7',3600);
+INSERT INTO Backs VALUES('e22123242@u.nus.edu','gold',3,
+						'2023-3-4','2023-3-7',3600);
+INSERT INTO Backs VALUES('e22123242@u.nus.edu','gold',4,
+						'2023-3-4','2023-3-7',3600);
+INSERT INTO Backs VALUES('e22123242@u.nus.edu','gold',5,
+						'2023-3-4','2023-3-7',3600);
+
 INSERT INTO Backs VALUES('e2224312@u.nus.edu','bronze',1,
 						'2023-3-4','2024-3-4',2000);
 INSERT INTO Backs VALUES('e222052@u.nus.edu','bronze',1,
