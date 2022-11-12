@@ -244,7 +244,7 @@ BEGIN
     FROM Backs b, Projects p
     WHERE b.request is not NULL
     AND b.id = p.id
-    AND p.deadline + interval '90 day' > b.request
+    AND p.deadline + interval '90 day' < b.request
 
   --Only insert into Refunds table if (email, pid) not yet exists
   LOOP
@@ -303,7 +303,7 @@ BEGIN
 									                      AND z.request >= (SELECT (today - interval '30 day')))
                         AND NOT EXISTS (SELECT * 
                                         FROM Refunds
-                                        WHERE bbb.email = Refunds.email
+                                        WHERE bbb.email = Refunds.email 
 									                      AND Refunds.date >= (SELECT (today - interval '30 day')))
 
                         AND bbb.id IN (SELECT p.id
