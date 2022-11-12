@@ -18,3 +18,5 @@ psql -d project_2_db -f test/init/add_project_types.sql
 psql -d project_2_db -f test/init/add_project.sql
 
 psql -d project_2_db -f test/init/add_backs.sql
+
+psql -d project_2_db -f test/add_superuser.sql
