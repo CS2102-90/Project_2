@@ -93,7 +93,7 @@ BEGIN
   FROM Projects
   WHERE NEW.pid = Projects.id;
 
-  IF (checkk IS NULL) THEN
+  IF (checkk IS NULL) OR (NEW.date < checkk) THEN
      RETURN NULL;
   END IF;
 
@@ -234,20 +234,28 @@ CREATE OR REPLACE PROCEDURE auto_reject(
 ) AS $$
 -- add declaration here
 DECLARE 
-  email TEXT;
-  pid INT;
+  emaill TEXT;
+  pidd INT;
   cur_ind INT;
 BEGIN
   -- your code here
-  FOR email, pid IN
+  FOR emaill, pidd IN
     SELECT b.email, b.id 
     FROM Backs b, Projects p
     WHERE b.request is not NULL
     AND b.id = p.id
     AND p.deadline + interval '90 day' > b.request
 
+  --Only insert into Refunds table if (email, pid) not yet exists
   LOOP
-    INSERT INTO Refunds VALUES (email, pid, eid, today, FALSE);
+    IF NOT EXISTS (
+      SELECT * FROM
+      Refunds r 
+      WHERE r.email = emaill
+      AND r.pid = pidd 
+    ) THEN
+      INSERT INTO Refunds VALUES (emaill, pidd, eid, today, FALSE);
+    END IF;
   END LOOP;
 
 END;
