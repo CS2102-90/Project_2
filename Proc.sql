@@ -365,13 +365,13 @@ CREATE OR REPLACE FUNCTION find_top_popular(
 ) RETURNS TABLE(id INT, name TEXT, email TEXT, days INT) AS $$
 BEGIN
   RETURN QUERY
-  SELECT
-    p.id, p.name, p.email, c.days
+  WITH closest_date as (SELECT p.id, closest_date_goal(p.id, p.created, p.goal, today) as dayy
+  FROM Projects p)
+  SELECT p.id, p.name, p.email, closest_date.dayy
   FROM
-    Projects p,
-    LATERAL (SELECT closest_date_goal(p.id, p.created, p.goal, today)) c(days)
-  WHERE p.ptype = p_typee AND c.days IS NOT NULL AND p.created < today
-  ORDER BY c.days ASC, p.id ASC
+    Projects p, closest_date
+  WHERE p.id = closest_date.id AND p.ptype = p_typee AND closest_date.dayy IS NOT NULL AND p.created < today
+  ORDER BY closest_date.dayy ASC, p.id ASC
   LIMIT n;
 END;
 $$ LANGUAGE plpgsql;
