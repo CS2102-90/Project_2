@@ -17,9 +17,7 @@ BEGIN
   IF (count1 > 0) OR (count2 > 0) THEN
     RETURN NEW;
   ELSE 
-  	DELETE FROM  Users
-	WHERE email = NEW.email;
-    RETURN NULL;
+  	RAISE EXCEPTION 'Neither Backer nor Creator';
   END IF;
 END;
 $$ LANGUAGE plpgsql;
@@ -69,9 +67,7 @@ BEGIN
   IF (count1 > 0) THEN
     RETURN NEW;
   ELSE 
-  	DELETE FROM Projects
-	WHERE Projects.id = NEW.id;
-    RETURN NULL;
+  	RAISE EXCEPTION 'Project has no reward';
   END IF;
 END;
 $$ LANGUAGE plpgsql;
@@ -97,7 +93,10 @@ BEGIN
   FROM Projects
   WHERE NEW.pid = Projects.id;
 
-  IF (checkk IS NOT NULL) THEN
+  IF (checkk IS NULL) THEN
+     RETURN NULL;
+  END IF;
+
   BEGIN 
     ddl := DATEADD(DD, -90, ddl);
     IF (ddl >= checkk) THEN
@@ -106,9 +105,7 @@ BEGIN
       RETURN (NEW.email, NEW.pid, NEW.eid, NEW.date, FALSE);
     END IF;
   END;
-  ELSE 
-    RETURN NULL;
-  END IF;
+
 END;
 $$ LANGUAGE plpgsql;
 
@@ -184,7 +181,6 @@ CREATE OR REPLACE PROCEDURE add_user(
 -- add declaration here
   -- your code here
 BEGIN
-	BEGIN
 	SET CONSTRAINTS backer_or_creator DEFERRED;
 	INSERT INTO Users VALUES (email, name, cc1, cc2);
 
@@ -246,11 +242,12 @@ DECLARE
 BEGIN
   -- your code here
   SELECT b.email, b.id INTO emails, pids
-  FROM Backs b, Prokects p
+  -- Sai rui, ko dc, mai sua
+  FROM Backs b, Projects p
   WHERE b.request is not NULL
   AND b.id = p.id
-  HAVING (SELECT DATEADD(DD, -90, p.deadline)) > b.request;
-  -- Thong cur_idx from 0 to 1
+  HAVING (SELECT (p.deadline + interval '90 day')) > b.request;
+
   cur_ind := 1;
   WHILE (cur_ind <= array_length(emails, 1))
   LOOP

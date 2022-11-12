@@ -101,3 +101,6 @@ CALL add_user('e22276287@u.nus.edu','Faker','DBS102320','DBS28391',
 			  'Bill','237','123812daf3','Germany','CREATOR');
 CALL add_user('e222205462@u.nus.edu','Gangplank','DBS1023122','DBS283191',
 			  'Sun','2a37','1d23812323','Japan','BOTH');
+
+CALL add_user('e222205462@u.nus.edu','Gangplank','DBS1023122','DBS283191',
+			  'Sun','2a37','1d23812323','Japan','HAHA');
