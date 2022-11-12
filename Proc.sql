@@ -279,8 +279,9 @@ BEGIN
   FROM Backers , Users
   WHERE Backers.email = Users.email
   AND Backers.email IN ((SELECT bb.email
-                        FROM Backers NATURAL JOIN Backs AS bb, Projects
-                        WHERE bb.email in (SELECT Verifies.email FROM Verifies)
+                        FROM Backs AS bb, Projects pp
+                        WHERE bb.email in (SELECT Verifies.email FROM Verifies WHERE Verifies.verified <= today)
+                        AND bb.id = Projects.id 
                         AND bb.id IN  (SELECT p.id
                                             FROM Projects p, Backs b 
                                             WHERE p.id = b.id 
@@ -288,32 +289,31 @@ BEGIN
                                             AND today > deadline
                                             GROUP BY p.id 
                                             HAVING SUM(b.amount) >= p.goal )
-                        AND bb.id = Projects.id 
                         GROUP BY bb.email
-                        HAVING COUNT(Projects.id) >= 5
-                        AND COUNT(DISTINCT Projects.ptype) >= 3)
+                        HAVING COUNT(pp.id) >= 5
+                        AND COUNT(DISTINCT pp.ptype) >= 3)
                         UNION
-                        (SELECT bb.email
-                        FROM Backers NATURAL JOIN Backs AS bb
-                        WHERE bb.email IN (SELECT Verifies.email FROM Verifies)
+                        (SELECT bbb.email
+                        FROM Backs AS bbb
+                        WHERE bbb.email IN (SELECT Verifies.email FROM Verifies WHERE Verifies.verified <= today)
                         AND NOT EXISTS (SELECT *
                                         FROM Backs z
-                                        WHERE Backers.email = z.email
+                                        WHERE bbb.email = z.email
                                         AND z.request IS NOT NULL
-									    AND z.request >= (SELECT (today - interval '30 day')))
+									                      AND z.request >= (SELECT (today - interval '30 day')))
                         AND NOT EXISTS (SELECT * 
                                         FROM Refunds
-                                        WHERE Backers.email = Refunds.email
-									    AND Refunds.date >= (SELECT (today - interval '30 day')))
+                                        WHERE bbb.email = Refunds.email
+									                      AND Refunds.date >= (SELECT (today - interval '30 day')))
 
-                        AND bb.id IN (SELECT p.id
+                        AND bbb.id IN (SELECT p.id
                                             FROM Projects p, Backs b 
                                             WHERE p.id = b.id 
                                             AND deadline >= (SELECT (today - interval '30 day'))
                                             AND today > deadline
                                             GROUP BY p.id 
                                             HAVING SUM(b.amount) >= p.goal )
-                        GROUP BY bb.email
+                        GROUP BY bbb.email
                         HAVING SUM(amount) >= 1500))
   ORDER BY email ASC;
 END;
