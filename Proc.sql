@@ -22,8 +22,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS backer_or_creator ON Users;
-
 CREATE CONSTRAINT TRIGGER backer_or_creator
 AFTER INSERT ON Users
 DEFERRABLE INITIALLY IMMEDIATE
@@ -73,8 +71,6 @@ BEGIN
   END IF;
 END;
 $$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS project_no_reward ON Projects;
 
 CREATE CONSTRAINT TRIGGER project_no_reward 
 AFTER INSERT ON Projects
