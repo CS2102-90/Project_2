@@ -334,6 +334,7 @@ CREATE OR REPLACE FUNCTION find_top_success(
 	LIMIT n;
 $$ LANGUAGE sql;
 
+/* Helper function for function */
 CREATE OR REPLACE FUNCTION closest_date_goal(
   p_id INT, created DATE, goal NUMERIC, today DATE
 ) RETURNS INT AS $$
@@ -356,8 +357,6 @@ BEGIN
   END LOOP;
   RETURN NULL;
 END; $$ LANGUAGE plpgsql;
-
-DROP FUNCTION IF EXISTS find_top_popular;
 
 /* Function #3  */
 CREATE OR REPLACE FUNCTION find_top_popular(
