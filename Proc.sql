@@ -51,7 +51,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE TRIGGER check_reward_min
+CREATE TRIGGER check_reward_min
 BEFORE INSERT ON Backs
 FOR EACH ROW EXECUTE FUNCTION check_reward_amount();
 
@@ -109,7 +109,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE Trigger check_valid_refund1
+CREATE Trigger check_valid_refund1
 BEFORE INSERT ON Refunds
 FOR EACH ROW EXECUTE FUNCTION check_refund();
 
@@ -133,7 +133,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE Trigger check_back
+CREATE Trigger check_back
 BEFORE INSERT ON Backs
 FOR EACH ROW EXECUTE FUNCTION check_backs();
 
@@ -161,7 +161,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE Trigger check_valid_refund
+CREATE Trigger check_valid_refund
 BEFORE UPDATE ON Backs
 FOR EACH ROW EXECUTE FUNCTION check_refund_request();
 /* ------------------------ */
@@ -291,10 +291,12 @@ BEGIN
                         AND NOT EXISTS (SELECT *
                                         FROM Backs z
                                         WHERE Backers.email = z.email
-                                        AND z.request IS NOT NULL)
+                                        AND z.request IS NOT NULL
+									    AND z.request >= (SELECT (today - interval '30 day')))
                         AND NOT EXISTS (SELECT * 
                                         FROM Refunds
-                                        WHERE Backers.email = Refunds.email)
+                                        WHERE Backers.email = Refunds.email
+									    AND Refunds.date >= (SELECT (today - interval '30 day')))
 
                         AND bb.id IN (SELECT p.id
                                             FROM Projects p, Backs b 
